@@ -1,0 +1,15 @@
+---
+- name: check for AWS BIOS vendor
+  ansible.builtin.set_fact:
+    auto_registration_provider: AWS
+  when: auto_registration_provider is not defined and ansible_bios_version is search('(?i)amazon')
+
+- name: check for Azure asset tag
+  ansible.builtin.set_fact:
+    auto_registration_provider: MSAZ
+  when: auto_registration_provider is not defined and ansible_chassis_asset_tag == '7783-7084-3265-9085-8269-3286-77'
+  
+- name: ensure cloud provider was detected or already provided
+  fail:
+    msg: Unable to detect cloud provider for host
+  when: auto_registration_provider is not defined
