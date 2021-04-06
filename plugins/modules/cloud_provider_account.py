@@ -31,7 +31,8 @@ options:
     type: str
   provider:
     description:
-      - Short Name of the cloud provider (AWS, MSAZ, etc)
+      - Short Name of the cloud provider
+    choices: [ AWS, MSAZ, GCP ]
     required: true
     type: str
   id:
@@ -58,6 +59,27 @@ author:
 '''
 
 EXAMPLES = '''
+- name: Create a cloud provider account
+  redhatinsights.subscriptions.cloud_provider_account:
+    provider: AWS
+    id: 123456789012
+    nickname: my pretty neat aws account
+    refresh_token: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
+
+- name: Delete a provider account
+  redhatinsights.subscriptions.cloud_provider_account:
+    provider: MSAZ
+    id: c11d7e74-adb4-4ce3-9a07-93c7a6f88cdf
+    state: absent
+    refresh_token: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
+
+- name: Verify an account for use with auto registration
+  redhatinsights.subscriptions.cloud_provider_account:
+    provider: AWS
+    id: 123456789012
+    verification_identity: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1XYWFBTmxsOGgxOAo=
+    verification_signature: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1pblhDX2xhYi0zNAo=
+    refresh_token: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
 '''
 
 RETURN = '''
@@ -110,6 +132,19 @@ def run_module():
                     break
             break
     
+    # Delete account if needed
+    if account and module.params['provider'] == 'present':
+        if module.check_mode:
+            return_changed(module)
+        delete_body = {
+            'id': module.params['id'],
+        }
+        path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
+        create = client.delete(path, data=delete_body)
+        create.raise_for_status()
+        result['changed'] = True
+        module.exit_json(**result)
+    
     # Create account if missing
     if not account:
         if module.check_mode:
@@ -119,7 +154,7 @@ def run_module():
             'nickname': module.params['nickname'],
         }
         path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
-        create = client.post(path, json=list(new_account))
+        create = client.post(path, data=list(new_account))
         create.raise_for_status()
         result['changed'] = True
     else:

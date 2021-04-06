@@ -20,7 +20,7 @@ class RedHatAPIClient:
         self.timeout = 30
         self.token = {
             'refresh_token': module.params['refresh_token'],
-            'access_token': 'to_be_replaced',
+            'access_token': 'xxx',
             'token_type': 'Bearer',
             'expires_in': '-1',
         }
