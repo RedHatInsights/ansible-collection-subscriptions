@@ -3,12 +3,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import json
 import os
-from ansible.module_utils.urls import fetch_url
-from ansible.module_utils._text import to_text
-from ansible.module_utils.basic import env_fallback
-from oauthlib.oauth2 import Client
 from requests_oauthlib import OAuth2Session
 
 class RedHatAPIClient:
