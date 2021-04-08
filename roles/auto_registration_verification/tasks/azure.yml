@@ -1,0 +1,24 @@
+---
+- name: get instance identity doc
+  ansible.builtin.uri:
+    url: 'http://169.254.169.254/metadata/instance?api-version={{ azure_imds_api_version }}'
+    headers:
+      metadata: 'true'
+    return_content: yes
+    use_proxy: no
+  register: imds_identity_doc
+
+- name: get attested metadata doc
+  ansible.builtin.uri:
+    url: 'http://169.254.169.254/metadata/attested/document?api-version={{ azure_imds_api_version }}'
+    headers:
+      metadata: 'true'
+    return_content: yes
+    use_proxy: no
+  register: imds_attested_data_doc
+
+- name: set discovered account vars
+  ansible.builtin.set_fact:
+    auto_registration_account_id: '{{ imds_identity_doc.json.compute.subscriptionId }}'
+    auto_registration_identity: '{{ imds_identity_doc.content | b64encode }}'
+    auto_registration_signature: '{{ imds_attested_data_doc.content | b64encode }}'

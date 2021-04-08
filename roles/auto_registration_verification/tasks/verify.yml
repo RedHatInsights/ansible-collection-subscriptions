@@ -1,0 +1,12 @@
+---
+
+- name: create verified cloud provider account
+  delegate_to: localhost
+  become: no
+  redhatinsights.subscriptions.cloud_provider_account:
+    refresh_token: '{{ rh_api_refresh_token }}'
+    provider: "{{ auto_registration_provider }}"
+    id: '{{ auto_registration_account_id }}'
+    nickname: '{{ auto_registration_account_nickname }}'
+    verification_identity: '{{ auto_registration_identity }}'
+    verification_signature: '{{ auto_registration_signature }}'

@@ -119,7 +119,8 @@ def run_module():
 
     # Get existing cloud providers
     enabled = client.get('/cloud_access_providers/enabled')
-    enabled.raise_for_status()
+    if enabled.status_code != 200:
+            module.fail_json(msg="Failed to retrieve provider accounts")
     providers = enabled.json()
 
     # Find existing account in list of enabled providers
@@ -140,8 +141,9 @@ def run_module():
             'id': module.params['id'],
         }
         path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
-        create = client.delete(path, data=delete_body)
-        create.raise_for_status()
+        delete = client.delete(path, data=delete_body)
+        if delete.status_code != 204:
+            module.fail_json(msg="Failed to delete provider account")
         result['changed'] = True
         module.exit_json(**result)
     
@@ -149,13 +151,16 @@ def run_module():
     if not account:
         if module.check_mode:
             return_changed(module)
-        new_account = {
-            'id': module.params['id'],
-            'nickname': module.params['nickname'],
-        }
+        new_account = [
+            {
+                'id': module.params['id'],
+                'nickname': module.params['nickname'],
+            }
+        ]
         path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
-        create = client.post(path, data=list(new_account))
-        create.raise_for_status()
+        create = client.post(path, data=new_account)
+        if create.status_code != 204:
+            module.fail_json(msg="Failed to create provider account")
         result['changed'] = True
     else:
         # Update existing account if nickname is different
@@ -165,7 +170,8 @@ def run_module():
             updated_account = {'nickname': module.params['nickname']}
             path = '/cloud_access_providers/'+module.params['provider']+'/accounts/'+account['id']
             update = client.put(path, data=updated_account)
-            update.raise_for_status()
+            if update.status_code != 204:
+                module.fail_json(msg="Failed to update provider account")
             result['changed'] = True
     
     # Submit an account verification if provided and account is not already verified
@@ -175,12 +181,13 @@ def run_module():
         # The API expects identity and signature to be base64 encoded
         # Because base64.b64encode returns values as bytes, we decode it back to a string
         verification = {
-            'identity': base64.b64encode(module.params['verification_identity'].encode('utf-8')).decode('utf-8'),
-            'signature': base64.b64encode(module.params['verification_signature'].encode('utf-8')).decode('utf-8'),
+            'identity': module.params['verification_identity'],
+            'signature': module.params['verification_signature'],
         }
         path = '/cloud_access_providers/'+module.params['provider']+'/accounts/'+module.params['id']+'/verification'
         verify = client.put(path, data=verification)
-        verify.raise_for_status()
+        if verify.status_code != 204:
+                module.fail_json(msg="Failed to verify provider account")
         result['changed'] = True
 
     module.exit_json(**result)

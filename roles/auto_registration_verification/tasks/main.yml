@@ -1,0 +1,10 @@
+---
+- include: detect_provider.yml
+
+- include: aws.yml
+  when: auto_registration_provider == 'AWS'
+
+- include: azure.yml
+  when: auto_registration_provider == 'MSAZ'
+
+- include: verify.yml

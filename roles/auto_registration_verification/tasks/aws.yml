@@ -1,0 +1,41 @@
+---
+- name: get IMDSv2 token
+  ansible.builtin.uri:
+    method: PUT
+    url: http://169.254.169.254/latest/api/token
+    headers:
+      x-aws-ec2-metadata-token-ttl-seconds: '300'
+    return_content: yes
+    use_proxy: no
+  register: imds_v2_token
+
+- name: get instance identity doc
+  ansible.builtin.uri:
+    url: http://169.254.169.254/latest/dynamic/instance-identity/document
+    headers:
+      x-aws-ec2-metadata-token: '{{ imds_v2_token.content }}'
+    return_content: yes
+    use_proxy: no
+  register: ec2_instance_identity
+
+- name: get instance signature
+  ansible.builtin.uri:
+    url: http://169.254.169.254/latest/dynamic/instance-identity/rsa2048
+    headers:
+      x-aws-ec2-metadata-token: '{{ imds_v2_token.content }}'
+    return_content: yes
+    use_proxy: no
+  register: ec2_instance_signature
+
+- name: build PEM block
+  ansible.builtin.set_fact:
+    ec2_instance_signature_pem: |
+      -----BEGIN PKCS7-----
+      {{ ec2_instance_signature.content }}
+      -----END PKCS7-----
+
+- name: set discovered account vars
+  ansible.builtin.set_fact:
+    auto_registration_account_id: '{{ ec2_instance_identity.json.accountId }}'
+    auto_registration_identity: '{{ ec2_instance_identity.content | b64encode }}'
+    auto_registration_signature: '{{ ec2_instance_signature_pem | b64encode }}'
