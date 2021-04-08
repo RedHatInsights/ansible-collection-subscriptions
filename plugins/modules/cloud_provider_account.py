@@ -39,7 +39,7 @@ options:
     description:
       - Account ID of the cloud provider account
     required: true
-    type: strss
+    type: str
   nickname:
     description:
       - Nickname or short description of the cloud provider account
@@ -134,18 +134,21 @@ def run_module():
             break
     
     # Delete account if needed
-    if account and module.params['provider'] == 'present':
-        if module.check_mode:
-            return_changed(module)
-        delete_body = {
-            'id': module.params['id'],
-        }
-        path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
-        delete = client.delete(path, data=delete_body)
-        if delete.status_code != 204:
-            module.fail_json(msg="Failed to delete provider account")
-        result['changed'] = True
-        module.exit_json(**result)
+    if module.params['state'] == 'absent':
+        if account:
+            if module.check_mode:
+                return_changed(module)
+            delete_body = {
+                'id': module.params['id'],
+            }
+            path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
+            delete = client.delete(path, data=delete_body)
+            if delete.status_code != 204:
+                module.fail_json(msg="Failed to delete provider account")
+            result['changed'] = True
+            module.exit_json(**result)
+        else:
+            module.exit_json(**result)
     
     # Create account if missing
     if not account:
