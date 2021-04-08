@@ -55,7 +55,9 @@ options:
       - Only needed to verify a cloud provider account for use with RHSM auto registration
     type: str
 author:
-    - Patrick Easters (@patrickeasters)
+  - Patrick Easters (@patrickeasters)
+requirements:
+  - requests-oauthlib
 '''
 
 EXAMPLES = '''
