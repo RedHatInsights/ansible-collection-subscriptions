@@ -167,6 +167,7 @@ def run_module():
         if create.status_code != 204:
             module.fail_json(msg="Failed to create provider account")
         result['changed'] = True
+        account = new_account
     else:
         # Update existing account if nickname is different
         if module.params['nickname'] and module.params['nickname'] != account['nickname']:
@@ -180,7 +181,7 @@ def run_module():
             result['changed'] = True
     
     # Submit an account verification if provided and account is not already verified
-    if module.params['verification_identity'] and 'verified' in account and not account['verified']:
+    if module.params['verification_identity'] and ('verified' not in account or not account['verified']):
         if module.check_mode:
             return_changed(module)
         # The API expects identity and signature to be base64 encoded
