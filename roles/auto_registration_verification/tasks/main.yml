@@ -7,4 +7,7 @@
 - include: azure.yml
   when: auto_registration_provider == 'MSAZ'
 
+- include: gcp.yml
+  when: auto_registration_provider == 'GCE'
+
 - include: verify.yml

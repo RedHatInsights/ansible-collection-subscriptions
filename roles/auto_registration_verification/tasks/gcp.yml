@@ -1,0 +1,28 @@
+---
+- name: get instance identity JWT
+  ansible.builtin.uri:
+    method: GET
+    url: 'http://metadata/computeMetadata/v1/instance/service-accounts/default/identity?audience=https://subscription.rhsm.redhat.com:443/subscription&format=full'
+    headers:
+      Metadata-Flavor: 'Google'
+    return_content: yes
+    use_proxy: no
+  register: gcp_instance_identity_raw
+
+- name: Decode instance identity JWT payload
+  ansible.builtin.set_fact:
+    gcp_instance_identity: "{{ (gcp_instance_identity_raw.content.split('.')[1] + '==') | b64decode }}"
+
+#- name: Print instance identity
+#  debug:
+#    msg: "{{ gcp_instance_identity }}"
+#
+#- name: Print project id
+#  debug:
+#    msg: "{{ gcp_instance_identity | community.general.json_query('google.compute_engine.project_id') }}"
+
+- name: set discovered account vars
+  ansible.builtin.set_fact:
+    auto_registration_account_id: "{{ gcp_instance_identity | community.general.json_query('google.compute_engine.project_id') }}"
+    auto_registration_identity: '{{ gcp_instance_identity_raw.content }}'
+    auto_registration_signature: ''

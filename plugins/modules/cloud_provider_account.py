@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from __future__ import (absolute_import, division, print_function)
+
 __metaclass__ = type
 
 DOCUMENTATION = '''
@@ -89,11 +90,11 @@ RETURN = '''
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.redhatinsights.subscriptions.plugins.module_utils.rhapi import RedHatAPIClient
-import base64
+
 
 def return_changed(module):
-  result = dict(changed=True)
-  module.exit_json(**result)
+    result = dict(changed=True)
+    module.exit_json(**result)
 
 
 def run_module():
@@ -122,19 +123,20 @@ def run_module():
     # Get existing cloud providers
     enabled = client.get('/cloud_access_providers/enabled')
     if enabled.status_code != 200:
-            module.fail_json(msg="Failed to retrieve provider accounts")
+        module.fail_json(msg="Failed to retrieve provider accounts")
     providers = enabled.json()
 
     # Find existing account in list of enabled providers
     account = {}
-    for p in providers['body']:
-        if p['shortName'] == module.params['provider']:
-            for a in p['accounts']:
-                if a['id'] == module.params['id']:
-                    account = a
-                    break
-            break
-    
+    if providers['body']:
+        for p in providers['body']:
+            if p['shortName'] == module.params['provider']:
+                for a in p['accounts']:
+                    if a['id'] == module.params['id']:
+                        account = a
+                        break
+                break
+
     # Delete account if needed
     if module.params['state'] == 'absent':
         if account:
@@ -143,7 +145,7 @@ def run_module():
             delete_body = {
                 'id': module.params['id'],
             }
-            path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
+            path = '/cloud_access_providers/' + module.params['provider'] + '/accounts'
             delete = client.delete(path, data=delete_body)
             if delete.status_code != 204:
                 module.fail_json(msg="Failed to delete provider account")
@@ -151,7 +153,7 @@ def run_module():
             module.exit_json(**result)
         else:
             module.exit_json(**result)
-    
+
     # Create account if missing
     if not account:
         if module.check_mode:
@@ -162,7 +164,7 @@ def run_module():
                 'nickname': module.params['nickname'],
             }
         ]
-        path = '/cloud_access_providers/'+module.params['provider']+'/accounts'
+        path = '/cloud_access_providers/' + module.params['provider'] + '/accounts'
         create = client.post(path, data=new_account)
         if create.status_code != 204:
             module.fail_json(msg="Failed to create provider account")
@@ -174,12 +176,12 @@ def run_module():
             if module.check_mode:
                 return_changed(module)
             updated_account = {'nickname': module.params['nickname']}
-            path = '/cloud_access_providers/'+module.params['provider']+'/accounts/'+account['id']
+            path = '/cloud_access_providers/' + module.params['provider'] + '/accounts/' + account['id']
             update = client.put(path, data=updated_account)
             if update.status_code != 204:
                 module.fail_json(msg="Failed to update provider account")
             result['changed'] = True
-    
+
     # Submit an account verification if provided and account is not already verified
     if module.params['verification_identity'] and ('verified' not in account or not account['verified']):
         if module.check_mode:
@@ -190,10 +192,15 @@ def run_module():
             'identity': module.params['verification_identity'],
             'signature': module.params['verification_signature'],
         }
-        path = '/cloud_access_providers/'+module.params['provider']+'/accounts/'+module.params['id']+'/verification'
+
+        if module.params['provider'] == "GCE":
+            del verification['signature']
+
+        path = '/cloud_access_providers/' + module.params['provider'] + '/accounts/' + module.params[
+            'id'] + '/verification'
         verify = client.put(path, data=verification)
         if verify.status_code != 204:
-                module.fail_json(msg="Failed to verify provider account")
+            module.fail_json(msg=f'Failed to verify provider account ${verify.status_code}')
         result['changed'] = True
 
     module.exit_json(**result)
