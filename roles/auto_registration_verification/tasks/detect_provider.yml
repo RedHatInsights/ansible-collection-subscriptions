@@ -23,6 +23,26 @@
       when: ansible_chassis_asset_tag is defined and ansible_chassis_asset_tag == '7783-7084-3265-9085-8269-3286-77'
   when: auto_registration_provider is not defined
 
+- name: check for GCP system product
+  block:
+    - name: get system product name
+      shell: sudo dmidecode -s system-product-name | grep "Google Compute Engine"
+      register: system_product_name_out
+
+    - name: set system_product_name fact
+      ansible.builtin.set_fact:
+        system_product_name: "{{system_product_name_out.stdout}}"
+
+#    - name: print system_product_name fact
+#      debug:
+#        msg: "{{system_product_name}}"
+
+    - name: check for GCE system product then set auto registration provider to GCE
+      ansible.builtin.set_fact:
+        auto_registration_provider: GCE
+      when: system_product_name is defined and system_product_name == "Google Compute Engine"
+  when: auto_registration_provider is not defined
+
 - name: ensure cloud provider was detected or already provided
   fail:
     msg: Unable to detect cloud provider for host
