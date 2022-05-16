@@ -13,14 +13,6 @@
   ansible.builtin.set_fact:
     gcp_instance_identity: "{{ (gcp_instance_identity_raw.content.split('.')[1] + '==') | b64decode }}"
 
-#- name: Print instance identity
-#  debug:
-#    msg: "{{ gcp_instance_identity }}"
-#
-#- name: Print project id
-#  debug:
-#    msg: "{{ gcp_instance_identity | community.general.json_query('google.compute_engine.project_id') }}"
-
 - name: set discovered account vars
   ansible.builtin.set_fact:
     auto_registration_account_id: "{{ gcp_instance_identity | community.general.json_query('google.compute_engine.project_id') }}"

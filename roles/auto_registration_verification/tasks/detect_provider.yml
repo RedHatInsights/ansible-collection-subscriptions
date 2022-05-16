@@ -33,10 +33,6 @@
       ansible.builtin.set_fact:
         system_product_name: "{{system_product_name_out.stdout}}"
 
-#    - name: print system_product_name fact
-#      debug:
-#        msg: "{{system_product_name}}"
-
     - name: check for GCE system product then set auto registration provider to GCE
       ansible.builtin.set_fact:
         auto_registration_provider: GCE
