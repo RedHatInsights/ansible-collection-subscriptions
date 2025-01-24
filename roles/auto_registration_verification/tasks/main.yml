@@ -1,13 +1,13 @@
 ---
-- include: detect_provider.yml
+- include_tasks: detect_provider.yml
 
-- include: aws.yml
+- include_tasks: aws.yml
   when: auto_registration_provider == 'AWS'
 
-- include: azure.yml
+- include_tasks: azure.yml
   when: auto_registration_provider == 'MSAZ'
 
-- include: gcp.yml
+- include_tasks: gcp.yml
   when: auto_registration_provider == 'GCE'
 
-- include: verify.yml
+- include_tasks: verify.yml
