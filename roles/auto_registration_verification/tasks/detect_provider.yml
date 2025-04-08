@@ -1,8 +1,21 @@
 ---
+- name: set bios and board variable for checks
+  ansible.builtin.set_fact:
+    ansible_bios_board_check: "{{ ' '.join(to_join_list) }}"
+  vars:
+    to_join_list:
+      - "{{ ansible_bios_version | default('') }}"
+      - "{{ ansible_bios_vendor | default('') }}"
+      - "{{ ansible_board_vendor | default('') }}"
+      - "{{ ansible_chassis_asset_tag | default('') }}"
+      - "{{ ansible_chassis_vendor | default('') }}"
+
 - name: check for AWS BIOS vendor
   ansible.builtin.set_fact:
     auto_registration_provider: AWS
-  when: auto_registration_provider is not defined and ansible_bios_version is search('(?i)amazon')
+  when:
+    - auto_registration_provider is not defined or auto_registration_provider | trim | length == 0
+    - ansible_bios_board_check is search('(?i)amazon')
 
 - name: check for Azure asset tag
   block:
@@ -26,17 +39,15 @@
 - name: check for GCP system product
   block:
     - name: get system product name
-      shell: sudo dmidecode -s system-product-name | grep "Google Compute Engine"
+      command: dmidecode -s system-product-name
+      become: true
       register: system_product_name_out
-
-    - name: set system_product_name fact
-      ansible.builtin.set_fact:
-        system_product_name: "{{system_product_name_out.stdout}}"
+      changed_when: false
 
     - name: check for GCE system product then set auto registration provider to GCE
       ansible.builtin.set_fact:
         auto_registration_provider: GCE
-      when: system_product_name is defined and system_product_name == "Google Compute Engine"
+      when: system_product_name_out.stdout == "Google Compute Engine"
   when: auto_registration_provider is not defined
 
 - name: ensure cloud provider was detected or already provided
