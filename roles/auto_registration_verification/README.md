@@ -25,10 +25,10 @@ Role Variables
 Example Playbook
 ----------------
 
-```
+```yaml
 - hosts: all
   roles:
-    - role: foo_app_instance
+    - role: auto_registration_verification
       vars:
         rh_api_refresh_token: aHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQo=
 ```
