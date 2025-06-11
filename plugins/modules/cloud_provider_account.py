@@ -171,8 +171,8 @@ def run_module():
         result['changed'] = True
         account = new_account
     else:
-        # Update existing account if nickname is different
-        if module.params['nickname'] and module.params['nickname'] != account['nickname']:
+        # Update existing account if nickname is different and was not autocreated by Cloud Sources
+        if module.params['nickname'] and account['nickname'] != 'Created by Sources' and module.params['nickname'] != account['nickname']:
             if module.check_mode:
                 return_changed(module)
             updated_account = {'nickname': module.params['nickname']}
